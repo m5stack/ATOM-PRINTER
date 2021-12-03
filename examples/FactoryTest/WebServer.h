@@ -56,7 +56,7 @@ typedef struct {
   uint8_t buf[HTTP_UPLOAD_BUFLEN];
 } HTTPUpload;
 
-#include "detail/RequestHandler.h"
+#include "RequestHandler.h"
 
 namespace fs {
 class FS;
