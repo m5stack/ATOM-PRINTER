@@ -23,7 +23,7 @@
 #include "WiFiClient.h"
 #include "WebServer.h"
 #include "FS.h"
-#include "detail/RequestHandlersImpl.h"
+#include "RequestHandlersImpl.h"
 
 //#define DEBUG_ESP_HTTP_SERVER
 #ifdef DEBUG_ESP_PORT

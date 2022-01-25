@@ -72,7 +72,7 @@ void flashing(uint32_t color,uint8_t frequency){
 void setup(){
     M5.begin(true, false, true);
     preferences.begin("printer-config");  
-    if(preferences.getBytesLength("PRINTER_MODE"==0)){
+    if(preferences.getBytesLength("PRINTER_MODE")==0){
       //如果flash上不存在打印机的模式时，将保存APMode
       preferences.putBool("PRINTER_MODE", APMode);
     }
@@ -404,9 +404,9 @@ void setWebServer()
     webServer.on("/", handleRoot);
     webServer.on("/Connect", [](){
         String ssid = urlDecode(webServer.arg("ssid"));
-        Serial.printf("SSID: %s\n", ssid);
+        Serial.printf("SSID: %s\n", ssid.c_str());
         String pass = urlDecode(webServer.arg("pass"));
-        Serial.printf("Password: %s\n\nWriting SSID to EEPROM...\n", pass);
+        Serial.printf("Password: %s\n\nWriting SSID to EEPROM...\n", pass.c_str());
         
         Serial.println("Writing Password to nvr...");
         preferences.putString("WIFI_SSID", ssid);
@@ -442,9 +442,9 @@ void setWebServer()
 
     webServer.on("/Connect", [](){
       String ssid = urlDecode(webServer.arg("ssid"));
-      Serial.printf("SSID: %s\n", ssid);
+      Serial.printf("SSID: %s\n", ssid.c_str());
       String pass = urlDecode(webServer.arg("pass"));
-      Serial.printf("Password: %s\n\nWriting SSID to EEPROM...\n", pass);
+      Serial.printf("Password: %s\n\nWriting SSID to EEPROM...\n", pass.c_str());
 
       Serial.println("Writing Password to nvr...");
       preferences.putString("WIFI_SSID", ssid);
