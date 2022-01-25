@@ -4,8 +4,9 @@
   FastLED: https://github.com/FastLED/FastLED
 */
 
-#include <M5Atom.h>
 #include "PrinterApi.h"
+#include <M5Atom.h>
+
 
 Printer atomPrinter;
 HardwareSerial AtomSerial(1);
@@ -18,8 +19,7 @@ void setup() {
   atomPrinter.NewLine_Setting(0x0A);
 }
 
-void loop()
-{
+void loop() {
   atomPrinter.Printer_Init();
   atomPrinter.Print_ASCII("Hello M5stack");
   atomPrinter.Print_NewLine(2);

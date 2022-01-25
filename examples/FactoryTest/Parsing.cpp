@@ -19,10 +19,11 @@
   Modified 8 May 2015 by Hristo Gochkov (proper post and file upload handling)
 */
 
-#include <Arduino.h>
-#include "WiFiServer.h"
-#include "WiFiClient.h"
 #include "WebServer.h"
+#include "WiFiClient.h"
+#include "WiFiServer.h"
+#include <Arduino.h>
+
 
 //#define DEBUG_ESP_HTTP_SERVER
 #ifdef DEBUG_ESP_PORT
@@ -31,25 +32,25 @@
 #define DEBUG_OUTPUT Serial
 #endif
 
-static char* readBytesWithTimeout(WiFiClient& client, size_t maxLength, size_t& dataLength, int timeout_ms)
-{
+static char *readBytesWithTimeout(WiFiClient &client, size_t maxLength,
+                                  size_t &dataLength, int timeout_ms) {
   char *buf = nullptr;
   dataLength = 0;
   while (dataLength < maxLength) {
     int tries = timeout_ms;
     size_t newLength;
-    while (!(newLength = client.available()) && tries--) delay(1);
+    while (!(newLength = client.available()) && tries--)
+      delay(1);
     if (!newLength) {
       break;
     }
     if (!buf) {
-      buf = (char *) malloc(newLength + 1);
+      buf = (char *)malloc(newLength + 1);
       if (!buf) {
         return nullptr;
       }
-    }
-    else {
-      char* newBuf = (char *) realloc(buf, dataLength + newLength + 1);
+    } else {
+      char *newBuf = (char *)realloc(buf, dataLength + newLength + 1);
       if (!newBuf) {
         free(buf);
         return nullptr;
@@ -63,14 +64,14 @@ static char* readBytesWithTimeout(WiFiClient& client, size_t maxLength, size_t& 
   return buf;
 }
 
-bool WebServer::_parseRequest(WiFiClient& client) {
+bool WebServer::_parseRequest(WiFiClient &client) {
   // Read the first line of HTTP request
   String req = client.readStringUntil('\r');
   client.readStringUntil('\n');
-  //reset header value
+  // reset header value
   for (int i = 0; i < _headerKeysCount; ++i) {
-    _currentHeaders[i].value =String();
-   }
+    _currentHeaders[i].value = String();
+  }
 
   // First line of HTTP request looks like "GET /path HTTP/1.1"
   // Retrieve the "/path" part by finding the spaces
@@ -90,7 +91,7 @@ bool WebServer::_parseRequest(WiFiClient& client) {
   _currentVersion = atoi(versionEnd.c_str());
   String searchStr = "";
   int hasSearch = url.indexOf('?');
-  if (hasSearch != -1){
+  if (hasSearch != -1) {
     searchStr = urlDecode(url.substring(hasSearch + 1));
     url = url.substring(0, hasSearch);
   }
@@ -120,8 +121,8 @@ bool WebServer::_parseRequest(WiFiClient& client) {
   DEBUG_OUTPUT.println(searchStr);
 #endif
 
-  //attach handler
-  RequestHandler* handler;
+  // attach handler
+  RequestHandler *handler;
   for (handler = _firstHandler; handler; handler = handler->next()) {
     if (handler->canHandle(_currentMethod, _currentUri))
       break;
@@ -130,62 +131,67 @@ bool WebServer::_parseRequest(WiFiClient& client) {
 
   String formData;
   // below is needed only when POST type request
-  if (method == HTTP_POST || method == HTTP_PUT || method == HTTP_PATCH || method == HTTP_DELETE){
+  if (method == HTTP_POST || method == HTTP_PUT || method == HTTP_PATCH ||
+      method == HTTP_DELETE) {
     String boundaryStr;
     String headerName;
     String headerValue;
     bool isForm = false;
     bool isEncoded = false;
     uint32_t contentLength = 0;
-    //parse headers
-    while(1){
+    // parse headers
+    while (1) {
       req = client.readStringUntil('\r');
       client.readStringUntil('\n');
-      if (req == "") break;//no moar headers
+      if (req == "")
+        break; // no moar headers
       int headerDiv = req.indexOf(':');
-      if (headerDiv == -1){
+      if (headerDiv == -1) {
         break;
       }
       headerName = req.substring(0, headerDiv);
       headerValue = req.substring(headerDiv + 1);
       headerValue.trim();
-       _collectHeader(headerName.c_str(),headerValue.c_str());
+      _collectHeader(headerName.c_str(), headerValue.c_str());
 
-      #ifdef DEBUG_ESP_HTTP_SERVER
+#ifdef DEBUG_ESP_HTTP_SERVER
       DEBUG_OUTPUT.print("headerName: ");
       DEBUG_OUTPUT.println(headerName);
       DEBUG_OUTPUT.print("headerValue: ");
       DEBUG_OUTPUT.println(headerValue);
-      #endif
+#endif
 
-      if (headerName.equalsIgnoreCase("Content-Type")){
-        if (headerValue.startsWith("text/plain")){
+      if (headerName.equalsIgnoreCase("Content-Type")) {
+        if (headerValue.startsWith("text/plain")) {
           isForm = false;
-        } else if (headerValue.startsWith("application/x-www-form-urlencoded")){
+        } else if (headerValue.startsWith(
+                       "application/x-www-form-urlencoded")) {
           isForm = false;
           isEncoded = true;
-        } else if (headerValue.startsWith("multipart/")){
-          boundaryStr = headerValue.substring(headerValue.indexOf('=')+1);
+        } else if (headerValue.startsWith("multipart/")) {
+          boundaryStr = headerValue.substring(headerValue.indexOf('=') + 1);
           isForm = true;
         }
-      } else if (headerName.equalsIgnoreCase("Content-Length")){
+      } else if (headerName.equalsIgnoreCase("Content-Length")) {
         contentLength = headerValue.toInt();
-      } else if (headerName.equalsIgnoreCase("Host")){
+      } else if (headerName.equalsIgnoreCase("Host")) {
         _hostHeader = headerValue;
       }
     }
 
-    if (!isForm){
+    if (!isForm) {
       size_t plainLength;
-      char* plainBuf = readBytesWithTimeout(client, contentLength, plainLength, HTTP_MAX_POST_WAIT);
+      char *plainBuf = readBytesWithTimeout(client, contentLength, plainLength,
+                                            HTTP_MAX_POST_WAIT);
       if (plainLength < contentLength) {
-      	free(plainBuf);
-      	return false;
+        free(plainBuf);
+        return false;
       }
       if (contentLength > 0) {
-        if (searchStr != "") searchStr += '&';
-        if(isEncoded){
-          //url encoded form
+        if (searchStr != "")
+          searchStr += '&';
+        if (isEncoded) {
+          // url encoded form
           String decoded = urlDecode(plainBuf);
           size_t decodedLen = decoded.length();
           memcpy(plainBuf, decoded.c_str(), decodedLen);
@@ -193,22 +199,22 @@ bool WebServer::_parseRequest(WiFiClient& client) {
           searchStr += plainBuf;
         }
         _parseArguments(searchStr);
-        if(!isEncoded){
-          //plain post json or other data
-          RequestArgument& arg = _currentArgs[_currentArgCount++];
+        if (!isEncoded) {
+          // plain post json or other data
+          RequestArgument &arg = _currentArgs[_currentArgCount++];
           arg.key = "plain";
           arg.value = String(plainBuf);
         }
 
-  #ifdef DEBUG_ESP_HTTP_SERVER
+#ifdef DEBUG_ESP_HTTP_SERVER
         DEBUG_OUTPUT.print("Plain: ");
         DEBUG_OUTPUT.println(plainBuf);
-  #endif
+#endif
         free(plainBuf);
       }
     }
 
-    if (isForm){
+    if (isForm) {
       _parseArguments(searchStr);
       if (!_parseForm(client, boundaryStr, contentLength)) {
         return false;
@@ -217,27 +223,28 @@ bool WebServer::_parseRequest(WiFiClient& client) {
   } else {
     String headerName;
     String headerValue;
-    //parse headers
-    while(1){
+    // parse headers
+    while (1) {
       req = client.readStringUntil('\r');
       client.readStringUntil('\n');
-      if (req == "") break;//no moar headers
+      if (req == "")
+        break; // no moar headers
       int headerDiv = req.indexOf(':');
-      if (headerDiv == -1){
+      if (headerDiv == -1) {
         break;
       }
       headerName = req.substring(0, headerDiv);
       headerValue = req.substring(headerDiv + 2);
-      _collectHeader(headerName.c_str(),headerValue.c_str());
+      _collectHeader(headerName.c_str(), headerValue.c_str());
 
-	  #ifdef DEBUG_ESP_HTTP_SERVER
-	  DEBUG_OUTPUT.print("headerName: ");
-	  DEBUG_OUTPUT.println(headerName);
-	  DEBUG_OUTPUT.print("headerValue: ");
-	  DEBUG_OUTPUT.println(headerValue);
-	  #endif
+#ifdef DEBUG_ESP_HTTP_SERVER
+      DEBUG_OUTPUT.print("headerName: ");
+      DEBUG_OUTPUT.println(headerName);
+      DEBUG_OUTPUT.print("headerValue: ");
+      DEBUG_OUTPUT.println(headerValue);
+#endif
 
-	  if (headerName.equalsIgnoreCase("Host")){
+      if (headerName.equalsIgnoreCase("Host")) {
         _hostHeader = headerValue;
       }
     }
@@ -255,12 +262,13 @@ bool WebServer::_parseRequest(WiFiClient& client) {
   return true;
 }
 
-bool WebServer::_collectHeader(const char* headerName, const char* headerValue) {
+bool WebServer::_collectHeader(const char *headerName,
+                               const char *headerValue) {
   for (int i = 0; i < _headerKeysCount; i++) {
     if (_currentHeaders[i].key.equalsIgnoreCase(headerName)) {
-            _currentHeaders[i].value=headerValue;
-            return true;
-        }
+      _currentHeaders[i].value = headerValue;
+      return true;
+    }
   }
   return false;
 }
@@ -280,7 +288,7 @@ void WebServer::_parseArguments(String data) {
   }
   _currentArgCount = 1;
 
-  for (int i = 0; i < (int)data.length(); ) {
+  for (int i = 0; i < (int)data.length();) {
     i = data.indexOf('&', i);
     if (i == -1)
       break;
@@ -292,7 +300,7 @@ void WebServer::_parseArguments(String data) {
   DEBUG_OUTPUT.println(_currentArgCount);
 #endif
 
-  _currentArgs = new RequestArgument[_currentArgCount+1];
+  _currentArgs = new RequestArgument[_currentArgCount + 1];
   int pos = 0;
   int iarg;
   for (iarg = 0; iarg < _currentArgCount;) {
@@ -306,7 +314,8 @@ void WebServer::_parseArguments(String data) {
     DEBUG_OUTPUT.print(" &@ ");
     DEBUG_OUTPUT.println(next_arg_index);
 #endif
-    if ((equal_sign_index == -1) || ((equal_sign_index > next_arg_index) && (next_arg_index != -1))) {
+    if ((equal_sign_index == -1) ||
+        ((equal_sign_index > next_arg_index) && (next_arg_index != -1))) {
 #ifdef DEBUG_ESP_HTTP_SERVER
       DEBUG_OUTPUT.print("arg missing value: ");
       DEBUG_OUTPUT.println(iarg);
@@ -316,9 +325,9 @@ void WebServer::_parseArguments(String data) {
       pos = next_arg_index + 1;
       continue;
     }
-    RequestArgument& arg = _currentArgs[iarg];
+    RequestArgument &arg = _currentArgs[iarg];
     arg.key = data.substring(pos, equal_sign_index);
-	arg.value = data.substring(equal_sign_index + 1, next_arg_index);
+    arg.value = data.substring(equal_sign_index + 1, next_arg_index);
 #ifdef DEBUG_ESP_HTTP_SERVER
     DEBUG_OUTPUT.print("arg ");
     DEBUG_OUTPUT.print(iarg);
@@ -337,12 +346,11 @@ void WebServer::_parseArguments(String data) {
   DEBUG_OUTPUT.print("args count: ");
   DEBUG_OUTPUT.println(_currentArgCount);
 #endif
-
 }
 
-void WebServer::_uploadWriteByte(uint8_t b){
-  if (_currentUpload.currentSize == HTTP_UPLOAD_BUFLEN){
-    if(_currentHandler && _currentHandler->canUpload(_currentUri))
+void WebServer::_uploadWriteByte(uint8_t b) {
+  if (_currentUpload.currentSize == HTTP_UPLOAD_BUFLEN) {
+    if (_currentHandler && _currentHandler->canUpload(_currentUri))
       _currentHandler->upload(*this, _currentUri, _currentUpload);
     _currentUpload.totalSize += _currentUpload.currentSize;
     _currentUpload.currentSize = 0;
@@ -350,18 +358,18 @@ void WebServer::_uploadWriteByte(uint8_t b){
   _currentUpload.buf[_currentUpload.currentSize++] = b;
 }
 
-uint8_t WebServer::_uploadReadByte(WiFiClient& client){
+uint8_t WebServer::_uploadReadByte(WiFiClient &client) {
   int res = client.read();
-  if(res == -1){
-    while(!client.available() && client.connected())
+  if (res == -1) {
+    while (!client.available() && client.connected())
       yield();
     res = client.read();
   }
   return (uint8_t)res;
 }
 
-bool WebServer::_parseForm(WiFiClient& client, String boundary, uint32_t len){
-  (void) len;
+bool WebServer::_parseForm(WiFiClient &client, String boundary, uint32_t len) {
+  (void)len;
 #ifdef DEBUG_ESP_HTTP_SERVER
   DEBUG_OUTPUT.print("Parse Form: Boundary: ");
   DEBUG_OUTPUT.print(boundary);
@@ -376,11 +384,11 @@ bool WebServer::_parseForm(WiFiClient& client, String boundary, uint32_t len){
   } while (line.length() == 0 && retry < 3);
 
   client.readStringUntil('\n');
-  //start reading the form
-  if (line == ("--"+boundary)){
-    RequestArgument* postArgs = new RequestArgument[32];
+  // start reading the form
+  if (line == ("--" + boundary)) {
+    RequestArgument *postArgs = new RequestArgument[32];
     int postArgsLen = 0;
-    while(1){
+    while (1) {
       String argName;
       String argValue;
       String argType;
@@ -389,23 +397,26 @@ bool WebServer::_parseForm(WiFiClient& client, String boundary, uint32_t len){
 
       line = client.readStringUntil('\r');
       client.readStringUntil('\n');
-      if (line.length() > 19 && line.substring(0, 19).equalsIgnoreCase("Content-Disposition")){
+      if (line.length() > 19 &&
+          line.substring(0, 19).equalsIgnoreCase("Content-Disposition")) {
         int nameStart = line.indexOf('=');
-        if (nameStart != -1){
-          argName = line.substring(nameStart+2);
+        if (nameStart != -1) {
+          argName = line.substring(nameStart + 2);
           nameStart = argName.indexOf('=');
-          if (nameStart == -1){
+          if (nameStart == -1) {
             argName = argName.substring(0, argName.length() - 1);
           } else {
-            argFilename = argName.substring(nameStart+2, argName.length() - 1);
+            argFilename =
+                argName.substring(nameStart + 2, argName.length() - 1);
             argName = argName.substring(0, argName.indexOf('"'));
             argIsFile = true;
 #ifdef DEBUG_ESP_HTTP_SERVER
             DEBUG_OUTPUT.print("PostArg FileName: ");
             DEBUG_OUTPUT.println(argFilename);
 #endif
-            //use GET to set the filename if uploading using blob
-            if (argFilename == "blob" && hasArg("filename")) argFilename = arg("filename");
+            // use GET to set the filename if uploading using blob
+            if (argFilename == "blob" && hasArg("filename"))
+              argFilename = arg("filename");
           }
 #ifdef DEBUG_ESP_HTTP_SERVER
           DEBUG_OUTPUT.print("PostArg Name: ");
@@ -414,9 +425,10 @@ bool WebServer::_parseForm(WiFiClient& client, String boundary, uint32_t len){
           argType = "text/plain";
           line = client.readStringUntil('\r');
           client.readStringUntil('\n');
-          if (line.length() > 12 && line.substring(0, 12).equalsIgnoreCase("Content-Type")){
-            argType = line.substring(line.indexOf(':')+2);
-            //skip next line
+          if (line.length() > 12 &&
+              line.substring(0, 12).equalsIgnoreCase("Content-Type")) {
+            argType = line.substring(line.indexOf(':') + 2);
+            // skip next line
             client.readStringUntil('\r');
             client.readStringUntil('\n');
           }
@@ -424,12 +436,14 @@ bool WebServer::_parseForm(WiFiClient& client, String boundary, uint32_t len){
           DEBUG_OUTPUT.print("PostArg Type: ");
           DEBUG_OUTPUT.println(argType);
 #endif
-          if (!argIsFile){
-            while(1){
+          if (!argIsFile) {
+            while (1) {
               line = client.readStringUntil('\r');
               client.readStringUntil('\n');
-              if (line.startsWith("--"+boundary)) break;
-              if (argValue.length() > 0) argValue += "\n";
+              if (line.startsWith("--" + boundary))
+                break;
+              if (argValue.length() > 0)
+                argValue += "\n";
               argValue += line;
             }
 #ifdef DEBUG_ESP_HTTP_SERVER
@@ -438,11 +452,11 @@ bool WebServer::_parseForm(WiFiClient& client, String boundary, uint32_t len){
             DEBUG_OUTPUT.println();
 #endif
 
-            RequestArgument& arg = postArgs[postArgsLen++];
+            RequestArgument &arg = postArgs[postArgsLen++];
             arg.key = argName;
             arg.value = argValue;
 
-            if (line == ("--"+boundary+"--")){
+            if (line == ("--" + boundary + "--")) {
 #ifdef DEBUG_ESP_HTTP_SERVER
               DEBUG_OUTPUT.println("Done Parsing POST");
 #endif
@@ -461,32 +475,36 @@ bool WebServer::_parseForm(WiFiClient& client, String boundary, uint32_t len){
             DEBUG_OUTPUT.print(" Type: ");
             DEBUG_OUTPUT.println(_currentUpload.type);
 #endif
-            if(_currentHandler && _currentHandler->canUpload(_currentUri))
+            if (_currentHandler && _currentHandler->canUpload(_currentUri))
               _currentHandler->upload(*this, _currentUri, _currentUpload);
             _currentUpload.status = UPLOAD_FILE_WRITE;
             uint8_t argByte = _uploadReadByte(client);
-readfile:
-            while(argByte != 0x0D){
-              if (!client.connected()) return _parseFormUploadAborted();
+          readfile:
+            while (argByte != 0x0D) {
+              if (!client.connected())
+                return _parseFormUploadAborted();
               _uploadWriteByte(argByte);
               argByte = _uploadReadByte(client);
             }
 
             argByte = _uploadReadByte(client);
-            if (!client.connected()) return _parseFormUploadAborted();
-            if (argByte == 0x0A){
+            if (!client.connected())
+              return _parseFormUploadAborted();
+            if (argByte == 0x0A) {
               argByte = _uploadReadByte(client);
-              if (!client.connected()) return _parseFormUploadAborted();
-              if ((char)argByte != '-'){
-                //continue reading the file
+              if (!client.connected())
+                return _parseFormUploadAborted();
+              if ((char)argByte != '-') {
+                // continue reading the file
                 _uploadWriteByte(0x0D);
                 _uploadWriteByte(0x0A);
                 goto readfile;
               } else {
                 argByte = _uploadReadByte(client);
-                if (!client.connected()) return _parseFormUploadAborted();
-                if ((char)argByte != '-'){
-                  //continue reading the file
+                if (!client.connected())
+                  return _parseFormUploadAborted();
+                if ((char)argByte != '-') {
+                  // continue reading the file
                   _uploadWriteByte(0x0D);
                   _uploadWriteByte(0x0A);
                   _uploadWriteByte((uint8_t)('-'));
@@ -497,12 +515,12 @@ readfile:
               uint8_t endBuf[boundary.length()];
               client.readBytes(endBuf, boundary.length());
 
-              if (strstr((const char*)endBuf, boundary.c_str()) != NULL){
-                if(_currentHandler && _currentHandler->canUpload(_currentUri))
+              if (strstr((const char *)endBuf, boundary.c_str()) != NULL) {
+                if (_currentHandler && _currentHandler->canUpload(_currentUri))
                   _currentHandler->upload(*this, _currentUri, _currentUpload);
                 _currentUpload.totalSize += _currentUpload.currentSize;
                 _currentUpload.status = UPLOAD_FILE_END;
-                if(_currentHandler && _currentHandler->canUpload(_currentUri))
+                if (_currentHandler && _currentHandler->canUpload(_currentUri))
                   _currentHandler->upload(*this, _currentUri, _currentUpload);
 #ifdef DEBUG_ESP_HTTP_SERVER
                 DEBUG_OUTPUT.print("End File: ");
@@ -514,7 +532,7 @@ readfile:
 #endif
                 line = client.readStringUntil(0x0D);
                 client.readStringUntil(0x0A);
-                if (line == "--"){
+                if (line == "--") {
 #ifdef DEBUG_ESP_HTTP_SERVER
                   DEBUG_OUTPUT.println("Done Parsing POST");
 #endif
@@ -527,7 +545,7 @@ readfile:
                 _uploadWriteByte((uint8_t)('-'));
                 _uploadWriteByte((uint8_t)('-'));
                 uint32_t i = 0;
-                while(i < boundary.length()){
+                while (i < boundary.length()) {
                   _uploadWriteByte(endBuf[i++]);
                 }
                 argByte = _uploadReadByte(client);
@@ -544,21 +562,24 @@ readfile:
     }
 
     int iarg;
-    int totalArgs = ((32 - postArgsLen) < _currentArgCount)?(32 - postArgsLen):_currentArgCount;
-    for (iarg = 0; iarg < totalArgs; iarg++){
-      RequestArgument& arg = postArgs[postArgsLen++];
+    int totalArgs = ((32 - postArgsLen) < _currentArgCount) ? (32 - postArgsLen)
+                                                            : _currentArgCount;
+    for (iarg = 0; iarg < totalArgs; iarg++) {
+      RequestArgument &arg = postArgs[postArgsLen++];
       arg.key = _currentArgs[iarg].key;
       arg.value = _currentArgs[iarg].value;
     }
-    if (_currentArgs) delete[] _currentArgs;
+    if (_currentArgs)
+      delete[] _currentArgs;
     _currentArgs = new RequestArgument[postArgsLen];
-    for (iarg = 0; iarg < postArgsLen; iarg++){
-      RequestArgument& arg = _currentArgs[iarg];
+    for (iarg = 0; iarg < postArgsLen; iarg++) {
+      RequestArgument &arg = _currentArgs[iarg];
       arg.key = postArgs[iarg].key;
       arg.value = postArgs[iarg].value;
     }
     _currentArgCount = iarg;
-    if (postArgs) delete[] postArgs;
+    if (postArgs)
+      delete[] postArgs;
     return true;
   }
 #ifdef DEBUG_ESP_HTTP_SERVER
@@ -568,40 +589,34 @@ readfile:
   return false;
 }
 
-String WebServer::urlDecode(const String& text)
-{
-	String decoded = "";
-	char temp[] = "0x00";
-	unsigned int len = text.length();
-	unsigned int i = 0;
-	while (i < len)
-	{
-		char decodedChar;
-		char encodedChar = text.charAt(i++);
-		if ((encodedChar == '%') && (i + 1 < len))
-		{
-			temp[2] = text.charAt(i++);
-			temp[3] = text.charAt(i++);
+String WebServer::urlDecode(const String &text) {
+  String decoded = "";
+  char temp[] = "0x00";
+  unsigned int len = text.length();
+  unsigned int i = 0;
+  while (i < len) {
+    char decodedChar;
+    char encodedChar = text.charAt(i++);
+    if ((encodedChar == '%') && (i + 1 < len)) {
+      temp[2] = text.charAt(i++);
+      temp[3] = text.charAt(i++);
 
-			decodedChar = strtol(temp, NULL, 16);
-		}
-		else {
-			if (encodedChar == '+')
-			{
-				decodedChar = ' ';
-			}
-			else {
-				decodedChar = encodedChar;  // normal ascii char
-			}
-		}
-		decoded += decodedChar;
-	}
-	return decoded;
+      decodedChar = strtol(temp, NULL, 16);
+    } else {
+      if (encodedChar == '+') {
+        decodedChar = ' ';
+      } else {
+        decodedChar = encodedChar; // normal ascii char
+      }
+    }
+    decoded += decodedChar;
+  }
+  return decoded;
 }
 
-bool WebServer::_parseFormUploadAborted(){
+bool WebServer::_parseFormUploadAborted() {
   _currentUpload.status = UPLOAD_FILE_ABORTED;
-  if(_currentHandler && _currentHandler->canUpload(_currentUri))
+  if (_currentHandler && _currentHandler->canUpload(_currentUri))
     _currentHandler->upload(*this, _currentUri, _currentUpload);
   return false;
 }

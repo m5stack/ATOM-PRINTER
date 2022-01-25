@@ -1,9 +1,9 @@
 #include "PrinterApi.h"
 
-void Printer::Set_Printer_Uart(HardwareSerial& SerialData,uint8_t tx,uint8_t rx,uint16_t baud)
-{
-    AtomSerial = &SerialData; 
-    AtomSerial->begin(baud,SERIAL_8N1,rx,tx);
+void Printer::Set_Printer_Uart(HardwareSerial &SerialData, uint8_t tx,
+                               uint8_t rx, uint16_t baud) {
+  AtomSerial = &SerialData;
+  AtomSerial->begin(baud, SERIAL_8N1, rx, tx);
 }
 
 // void Printer::Clear_Buffer()
@@ -13,39 +13,31 @@ void Printer::Set_Printer_Uart(HardwareSerial& SerialData,uint8_t tx,uint8_t rx,
 //     AtomSerial->write(0x00);
 // }
 
-void Printer::NewLine_Setting(uint8_t n)
-{
-    AtomSerial->write(0x1B);
-    AtomSerial->write(0x23);
-    AtomSerial->write(0x23);
-    AtomSerial->write(0x42);
-    AtomSerial->write(0x4D);
-    AtomSerial->write(0x55);
-    AtomSerial->write(0x4C);
-    AtomSerial->write(n);
+void Printer::NewLine_Setting(uint8_t n) {
+  AtomSerial->write(0x1B);
+  AtomSerial->write(0x23);
+  AtomSerial->write(0x23);
+  AtomSerial->write(0x42);
+  AtomSerial->write(0x4D);
+  AtomSerial->write(0x55);
+  AtomSerial->write(0x4C);
+  AtomSerial->write(n);
 }
 
-void Printer::Printer_Init()
-{
-    AtomSerial->write(0x1B);
-    AtomSerial->write(0x40);
+void Printer::Printer_Init() {
+  AtomSerial->write(0x1B);
+  AtomSerial->write(0x40);
 }
 
-void Printer::Print_NewLine(uint8_t n)
-{
-    for(uint8_t i=0; i<n; i++)
-    {
-        AtomSerial->write(0x0A);
-    }
+void Printer::Print_NewLine(uint8_t n) {
+  for (uint8_t i = 0; i < n; i++) {
+    AtomSerial->write(0x0A);
+  }
 }
 
-void Printer::Print_ASCII(String data)
-{
-    AtomSerial->print(data);
-}
+void Printer::Print_ASCII(String data) { AtomSerial->print(data); }
 
-void Printer::Set_adjlevel(String AdjustLevel)
-{
+void Printer::Set_adjlevel(String AdjustLevel) {
   uint8_t lev;
   if (AdjustLevel == "L")
     lev = 0x48;
@@ -65,8 +57,7 @@ void Printer::Set_adjlevel(String AdjustLevel)
   AtomSerial->write(0x45);
   AtomSerial->write(lev);
 }
-void Printer::Set_QRCode(String QRCode)
-{
+void Printer::Set_QRCode(String QRCode) {
   uint8_t len, nH, nL;
   len = QRCode.length();
   len += 3;
@@ -83,8 +74,7 @@ void Printer::Set_QRCode(String QRCode)
   AtomSerial->print(QRCode);
   AtomSerial->write(0x00);
 }
-void Printer::Print_QRCode()
-{
+void Printer::Print_QRCode() {
   AtomSerial->write(0x1D);
   AtomSerial->write(0x28);
   AtomSerial->write(0x6B);
@@ -96,16 +86,14 @@ void Printer::Print_QRCode()
   AtomSerial->write(0x00);
 }
 
-void Printer::BarCode_switch(bool state)
-{
+void Printer::BarCode_switch(bool state) {
   AtomSerial->write(0x1D);
   AtomSerial->write(0x45);
   AtomSerial->write(0x43);
   AtomSerial->write(state);
 }
 
-void Printer::Set_BarCode_HRI(String Position)
-{
+void Printer::Set_BarCode_HRI(String Position) {
   uint8_t pos;
   if (Position == "Hide")
     pos = 0x00;
@@ -120,8 +108,7 @@ void Printer::Set_BarCode_HRI(String Position)
   AtomSerial->write(pos);
 }
 
-void Printer::Print_BarCode(String BarType,String BarCode)
-{
+void Printer::Print_BarCode(String BarType, String BarCode) {
   uint8_t type, len;
   if (BarType == "UPC-A")
     type = 0x41;
