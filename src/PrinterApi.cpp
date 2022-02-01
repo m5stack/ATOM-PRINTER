@@ -138,3 +138,18 @@ void Printer::Print_BarCode(String BarType, String BarCode) {
   AtomSerial->print(BarCode);
   AtomSerial->write(0x00);
 }
+
+void Printer::Print_BMP(int width, int height, const unsigned char *data, int mode, int wait) {
+  AtomSerial->write(0x1D);
+  AtomSerial->write(0x76);
+  AtomSerial->write(0x30);                      // 0
+  AtomSerial->write(mode);                      // m
+  AtomSerial->write((width / 8) & 0xff);        // xL
+  AtomSerial->write((width / 256 / 8) & 0xff);  // xH
+  AtomSerial->write((height) & 0xff);           // yL
+  AtomSerial->write((height / 256) & 0xff);     // yH
+  for (int i = 0; i < (width / 8 * height); i++) {
+    AtomSerial->write(data[i]);                 // data
+  delay(wait);
+  }
+}

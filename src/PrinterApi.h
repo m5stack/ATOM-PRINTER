@@ -18,6 +18,7 @@ public:
   void BarCode_switch(bool state);
   void Set_BarCode_HRI(String Position);
   void Print_BarCode(String BarType, String BarCode);
+  void Print_BMP(int width, int height, const unsigned char *data, int mode=0, int wait=0);
 
   HardwareSerial *AtomSerial;
 };
