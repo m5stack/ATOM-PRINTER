@@ -4,14 +4,14 @@
   FastLED: https://github.com/FastLED/FastLED
 */
 
-#include "PrinterApi.h"
 #include <M5Atom.h>
+#include "ATOM_PRINTER.h"
+#include "bitmap.h"
 
-Printer atomPrinter;
-HardwareSerial AtomSerial(1);
+ATOM_PRINTER printer;
 
 // https://m5stack.lang-ship.com/tools/image2data/?format=1bit_2
-const unsigned char img[128] PROGMEM = {
+unsigned char img[128] PROGMEM = {
 0b11111111, 0b11111111, 0b11111111, 0b11111111,
 0b10000000, 0b00000000, 0b00000000, 0b00000001,
 0b10000000, 0b00000000, 0b00000000, 0b00000001,
@@ -47,21 +47,19 @@ const unsigned char img[128] PROGMEM = {
 };
 
 void setup() {
-  M5.begin(true, false, true);
-
-  atomPrinter.Set_Printer_Uart(AtomSerial, 23, 33, 9600);
-  atomPrinter.Printer_Init();
-  atomPrinter.NewLine_Setting(0x0A);
+    M5.begin(true, false, true);
+    printer.begin();
+    M5.dis.drawpix(0, 0x00ffff);
+    printer.init();
+    printer.newLine(2);
 }
 
 void loop() {
-  atomPrinter.Printer_Init();
-  atomPrinter.Print_ASCII("Hello M5stack");
-  atomPrinter.Print_NewLine(2);
-  atomPrinter.Printer_Init();
-  atomPrinter.Print_BMP(32, 32, img);
-  atomPrinter.Print_NewLine(3);
-  atomPrinter.Printer_Init();
-
+  printer.init();
+  printer.printASCII("Hello M5stack");
+  printer.newLine(2);
+  printer.init();
+  printer.printBMP(0, 32, 32, img);
+  printer.newLine(3);
   delay(30000);
 }
