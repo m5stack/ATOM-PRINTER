@@ -21,7 +21,6 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
-#include "bitmap.h"
 
 xSemaphoreHandle xMQTTMutex = xSemaphoreCreateMutex();
 

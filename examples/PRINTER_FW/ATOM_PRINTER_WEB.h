@@ -3,7 +3,7 @@
 
 #include <WebServer.h>
 #include <DNSServer.h>
-#include <ATOM_PRINTER_CONFIG.h>
+#include "ATOM_PRINTER_CONFIG.h"
 #include <ESPmDNS.h>
 
 extern const IPAddress apIP;
