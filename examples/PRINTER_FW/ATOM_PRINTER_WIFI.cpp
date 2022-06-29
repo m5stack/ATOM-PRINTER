@@ -38,6 +38,7 @@ bool wifiConnect(String _wifi_ssid, String _wifi_password, unsigned long timeout
         }else{  
           device_state = kInit;
           Serial.print(".");
+          device_state = kWiFiDisconnected;
           delay(500);
         }
     }

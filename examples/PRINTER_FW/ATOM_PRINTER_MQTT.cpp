@@ -52,6 +52,8 @@ bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
         mqtt_user = _mqtt_user;
         mqtt_password = _mqtt_password;
         device_state = kMQTTConnected;
+    } else {
+        device_state = kMQTTDisconnected;
     }
 
     return is_conneced;

@@ -71,13 +71,20 @@ void TaskLED(void *pvParameters) {
     while (1) {
         switch (device_state) {
             case kInit:
-                M5.dis.drawpix(0, 0xffe500);  //yellow
+                //M5.dis.drawpix(0, 0xffe500);  //yellow
+                flashing(0x00ff00, 20);      //blinking green
                 break;
             case kWiFiConnected:
                 M5.dis.drawpix(0, 0x1d00ff);  //blue
                 break;
+            case kWiFiDisconnected:
+                flashing(0xff0000, 20);      //blinking red
+                break;
             case kMQTTConnected:
-                M5.dis.drawpix(0, 0x1dff00);  //green
+                M5.dis.drawpix(0, 0x1d00ff);  //blue
+                break;
+            case kMQTTDisconnected:
+                flashing(0x0000ff, 20);      //blinking blue
                 break;
         }
         vTaskDelay(1000);
@@ -137,7 +144,7 @@ void setup() {
     M5.dis.drawpix(0, 0x00ffff);  //初始化状态灯
     preferences.begin("PRINTER_CONFIG");
 
-    disableCore0WDT();
+    //disableCore0WDT();
 
     printer.init();
     // printer.newLine(1);
@@ -159,6 +166,7 @@ void setup() {
     setWebServer();
 
     if (preferences.getString("WIFI_SSID").length() > 1) {
+        Serial.println(wifi_ssid);
         wifi_ssid     = preferences.getString("WIFI_SSID");
         wifi_password = preferences.getString("WIFI_PWD");
         Serial.println(wifi_ssid);
@@ -166,9 +174,15 @@ void setup() {
         Serial.println("Get WIFI INFO From Preference");
         wifiConnect(wifi_ssid, wifi_password, 10000);
     }
+    // } else {
+    //     Serial.println("Use Default AP Config");
+    //     setWifiMode();
+    //     setWebServer();
+    // }
 
     if (preferences.getString("MQTT_BROKER").length() > 1) {
         Serial.println("Get MQTT INFO From Preference");
+        Serial.println(mqtt_broker);
         mqtt_broker   = preferences.getString("MQTT_BROKER");
         mqtt_port     = preferences.getInt("MQTT_PORT");
         mqtt_id       = preferences.getString("MQTT_ID");

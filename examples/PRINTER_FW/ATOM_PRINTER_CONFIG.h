@@ -11,7 +11,9 @@
 typedef enum {
     kInit = 0,
     kWiFiConnected,
+    kWiFiDisconnected,
     kMQTTConnected,
+    kMQTTDisconnected,
 } Atom_Printer_State_t;
 
 #endif
