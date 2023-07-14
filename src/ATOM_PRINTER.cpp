@@ -12,6 +12,30 @@ void ATOM_PRINTER::init() {
     _serial->write(INIT_PRINTER_CMD, sizeof(INIT_PRINTER_CMD));
 }
 
+void ATOM_PRINTER::WriteCMD(uint8_t *buff, uint8_t buff_size) {
+    cleanBuffer();
+    // memcpy(buffer, PRINT_POS_CMD, sizeof(PRINT_POS_CMD));
+    memcpy(buffer, buff, buff_size);
+    _serial->write(buffer, buff_size);
+}
+
+void ATOM_PRINTER::printPos(uint16_t posx) {
+    cleanBuffer();
+    memcpy(buffer, PRINT_POS_CMD, sizeof(PRINT_POS_CMD));
+    buffer[2] = posx & 0xff;
+    buffer[3] = (posx >> 8) & 0xff;
+    _serial->write(buffer, 4);
+}
+
+void ATOM_PRINTER::fontSize(uint8_t font_size) {
+    cleanBuffer();
+    if (font_size > 7)
+        font_size = 7;
+    memcpy(buffer, FONT_SIZE_CMD, sizeof(FONT_SIZE_CMD));
+    buffer[2] = (font_size | (font_size << 4)) & 0xff;
+    _serial->write(buffer, 3);
+}
+
 void ATOM_PRINTER::cleanBuffer() {
     for (int i = 0; i < 256; i++) {
         buffer[i] = 0;

@@ -9,7 +9,6 @@
   3. Configure WiFi connection and print data through mqtt server
 */
 
-
 #include <M5Atom.h>
 #include "ATOM_PRINTER.h"
 #include "ATOM_PRINTER_CONFIG.h"
@@ -52,6 +51,8 @@ String mqtt_user     = "USER";
 String mqtt_password = "PASSWORD";
 String mqtt_topic    = "";
 
+bool mqtt_connect_change_event = false;
+
 WiFiClient client;
 PubSubClient mqttClient(client);
 
@@ -71,20 +72,20 @@ void TaskLED(void *pvParameters) {
     while (1) {
         switch (device_state) {
             case kInit:
-                //M5.dis.drawpix(0, 0xffe500);  //yellow
-                flashing(0x00ff00, 20);      //blinking green
+                // M5.dis.drawpix(0, 0xffe500);  //yellow
+                flashing(0x00ff00, 20);  // blinking green
                 break;
             case kWiFiConnected:
-                M5.dis.drawpix(0, 0x1d00ff);  //blue
+                M5.dis.drawpix(0, 0x1d00ff);  // blue
                 break;
             case kWiFiDisconnected:
-                flashing(0xff0000, 20);      //blinking red
+                flashing(0xff0000, 20);  // blinking red
                 break;
             case kMQTTConnected:
-                M5.dis.drawpix(0, 0x1d00ff);  //blue
+                M5.dis.drawpix(0, 0x1d00ff);  // blue
                 break;
             case kMQTTDisconnected:
-                flashing(0x0000ff, 20);      //blinking blue
+                flashing(0x0000ff, 20);  // blinking blue
                 break;
         }
         vTaskDelay(1000);
@@ -95,6 +96,9 @@ void mqttCallback(char *topic, byte *payload, unsigned int len) {
     // mqtt回调函数：将从订阅主题获得的信息通过串口打印
     char PayloadData[len + 1];
     String Type = "";
+    int posx;
+    uint8_t indexs;
+    uint8_t fonts;
     strncpy(PayloadData, (char *)payload, len);
     PayloadData[len] = '\0';
     Serial.println(mqtt_topic + ":");
@@ -102,9 +106,17 @@ void mqttCallback(char *topic, byte *payload, unsigned int len) {
     Serial.println(String(PayloadData));
     //  printer.printASCII(String(PayloadData));
     Type = String(PayloadData);
-    if (Type.indexOf("ASCII:") >= 0) {
+    if (Type.indexOf("TEXT") >= 0) {
+        Type   = Type.substring(5);
+        posx   = Type.toInt();
+        indexs = Type.indexOf(",");
+        Type   = Type.substring(indexs + 1);
+        fonts  = Type.toInt();
+        indexs = Type.indexOf(":");
         printer.init();
-        printer.printASCII(&Type[6]);
+        printer.printPos(posx);
+        printer.fontSize(fonts);
+        printer.printASCII(&Type[indexs + 1]);
         printer.newLine(3);
     } else if (Type.indexOf("QR:") >= 0) {
         printer.init();
@@ -118,33 +130,13 @@ void mqttCallback(char *topic, byte *payload, unsigned int len) {
     }
 }
 
-void TaskMQTT(void *pvParameters) {
-    mqttClient.setBufferSize(4096);
-    mqttClient.setCallback(mqttCallback);
-    mqttClient.setKeepAlive(10);
-    mqttConnect(mqtt_broker, mqtt_port, mqtt_id, mqtt_user, mqtt_password,
-                2000);
-    while (1) {
-        if (WiFi.status() == WL_CONNECTED && !mqttClient.connected()) {
-            Serial.println("reconnect mqtt");
-            xSemaphoreTake(xMQTTMutex, portMAX_DELAY);
-            mqttConnect(mqtt_broker, mqtt_port, mqtt_id, mqtt_user,
-                        mqtt_password, 2000);
-            xSemaphoreGive(xMQTTMutex);
-        } else {
-            mqttClient.loop();
-        }
-        vTaskDelay(20);
-    }
-}
-
 void setup() {
     M5.begin(true, false, true);
     printer.begin();
-    M5.dis.drawpix(0, 0x00ffff);  //初始化状态灯
+    M5.dis.drawpix(0, 0x00ffff);  // 初始化状态灯
     preferences.begin("PRINTER_CONFIG");
 
-    //disableCore0WDT();
+    // disableCore0WDT();
 
     printer.init();
     // printer.newLine(1);
@@ -182,7 +174,6 @@ void setup() {
 
     if (preferences.getString("MQTT_BROKER").length() > 1) {
         Serial.println("Get MQTT INFO From Preference");
-        Serial.println(mqtt_broker);
         mqtt_broker   = preferences.getString("MQTT_BROKER");
         mqtt_port     = preferences.getInt("MQTT_PORT");
         mqtt_id       = preferences.getString("MQTT_ID");
@@ -195,17 +186,10 @@ void setup() {
         mqtt_topic = mac_addr;
     }
 
-    // Create MQTT Task
-    xTaskCreatePinnedToCore(TaskMQTT, "TaskMQTT"  // A name just for humans
-                            ,
-                            4096  // This stack size can be checked & adjusted
-                                  // by reading the Stack Highwater
-                            ,
-                            NULL,
-                            1  // Priority, with 3 (configMAX_PRIORITIES - 1)
-                               // being the highest, and 0 being the lowest.
-                            ,
-                            NULL, 0);
+    mqttClient.setBufferSize(4096);
+    mqttClient.setCallback(mqttCallback);
+    mqttClient.setKeepAlive(10);
+
     // printer.init();
     // printer.printASCII("M5STACK");
     // delay(2000);
@@ -222,5 +206,18 @@ void setup() {
 
 void loop() {
     webServer.handleClient();
+    dnsServer.processNextRequest();
+    if (WiFi.status() == WL_CONNECTED) {
+        if (!mqttClient.connected()) {
+            Serial.println("reconnect mqtt");
+            xSemaphoreTake(xMQTTMutex, portMAX_DELAY);
+            mqttConnect(mqtt_broker, mqtt_port, mqtt_id, mqtt_user,
+                        mqtt_password, 2000);
+            // mqtt_connect_change_event = false;
+            xSemaphoreGive(xMQTTMutex);
+        } else {
+            mqttClient.loop();
+        }
+    }
     M5.update();
 }

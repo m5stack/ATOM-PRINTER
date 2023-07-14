@@ -33,6 +33,9 @@ class ATOM_PRINTER {
     void begin(HardwareSerial *serial = &Serial2, int baud = 9600,
                uint8_t RX = 33, uint8_t TX = 23, bool debug = false);
     void init();
+    void printPos(uint16_t posx);
+    void fontSize(uint8_t font_size);
+    void WriteCMD(uint8_t *buff, uint8_t buff_size);
     void newLine(uint8_t count);
     void setBarCodeHRI(BarCodePos_t pos);
     void enableBarCode(bool state);

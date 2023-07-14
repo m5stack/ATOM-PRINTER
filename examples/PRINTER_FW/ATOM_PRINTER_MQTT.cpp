@@ -1,5 +1,6 @@
 #include "ATOM_PRINTER_MQTT.h"
 
+extern bool mqtt_connect_change_event;
 
 bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
                  String _mqtt_user, String _mqtt_password,
@@ -9,21 +10,33 @@ bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
 
     mqttClient.disconnect();
     mqttClient.setServer(_mqtt_broker.c_str(), _mqtt_port);
-    Serial.print(F("Connecting"));
+    Serial.println("Connecting...");
     String mqttid;
 
     if (_mqtt_broker.indexOf("m5stack") != -1) {
         mqttid = ("MQTTID_" + String(random(65536)));
     } else {
-        mqttid = _mqtt_id;
+        if (mqttid == "") {
+            mqttid = ("MQTTID_" + String(random(65536)));
+        } else {
+            mqttid = _mqtt_id;
+        }
     }
 
-    if (mqtt_topic == ""){
+    if (mqtt_topic == "") {
         mqtt_topic = mac_addr;
     }
 
+    if (_mqtt_user == "") {
+        _mqtt_user = ("_mqtt_user" + String(random(65536)));
+    }
+    if (_mqtt_password == "") {
+        _mqtt_password = ("_mqtt_password" + String(random(65536)));
+    }
+
     while (millis() - start < _timeout) {
-        if(mqttClient.connect(mqttid.c_str(), _mqtt_user.c_str(), _mqtt_password.c_str())) {
+        if (mqttClient.connect(mqttid.c_str(), _mqtt_user.c_str(),
+                               _mqtt_password.c_str())) {
             Serial.println("MQTT Connected!");
             is_conneced = true;
             Serial.println(F(" success"));
@@ -33,25 +46,25 @@ bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
             Serial.println("subscribe: " + mqtt_topic);
             mqttClient.subscribe(mqtt_topic.c_str());
             break;
-        }else{
+        } else {
             Serial.print(".");
-            delay(500);
+            vTaskDelay(500);
         }
     }
 
-    if(is_conneced) {
+    if (is_conneced) {
         preferences.putString("MQTT_BROKER", _mqtt_broker);
         preferences.putInt("MQTT_PORT", _mqtt_port);
         preferences.putString("MQTT_ID", _mqtt_id);
         preferences.putString("MQTT_USER", _mqtt_user);
         preferences.putString("MQTT_PASSPWD", _mqtt_password);
         preferences.putString("MQTT_TOPIC", mqtt_topic);
-        mqtt_broker = _mqtt_broker;
-        mqtt_port = _mqtt_port;
-        mqtt_id = _mqtt_id;
-        mqtt_user = _mqtt_user;
+        mqtt_broker   = _mqtt_broker;
+        mqtt_port     = _mqtt_port;
+        mqtt_id       = _mqtt_id;
+        mqtt_user     = _mqtt_user;
         mqtt_password = _mqtt_password;
-        device_state = kMQTTConnected;
+        device_state  = kMQTTConnected;
     } else {
         device_state = kMQTTDisconnected;
     }

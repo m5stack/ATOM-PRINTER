@@ -1,6 +1,10 @@
 //初始化打印机
 const uint8_t INIT_PRINTER_CMD[] = {0x1B, 0x40};
 
+const uint8_t PRINT_POS_CMD[] = {0x1B, 0x24};
+
+const uint8_t FONT_SIZE_CMD[] = {0x1D, 0x21};
+
 const uint8_t SET_BAR_CODE_POS_CMD[] = {0x1D, 0x48};
 
 const uint8_t ENABLE_BAR_CODE_MODE_CMD[] = {0x1D, 0x45, 0x43, 0xff};
