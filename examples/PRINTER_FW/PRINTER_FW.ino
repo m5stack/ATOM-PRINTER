@@ -183,7 +183,6 @@ void setup() {
         Serial.println(mqtt_broker);
     } else {
         Serial.println("Use Default MQTT Config");
-        mqtt_topic = mac_addr;
     }
 
     mqttClient.setBufferSize(4096);
