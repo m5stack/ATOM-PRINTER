@@ -44,12 +44,12 @@ String ssid_html;  // wifi列表
 String mac_addr;
 
 // mqtt
-String mqtt_broker   = "mqtt.m5stack.com";
-int mqtt_port        = 1883;
-String mqtt_id       = "ID";
-String mqtt_user     = "USER";
-String mqtt_password = "PASSWORD";
-String mqtt_topic    = "";
+String mqtt_broker   = MQTT_BROKER;
+int mqtt_port        = MQTT_PORT;
+String mqtt_id       = MQTT_ID;
+String mqtt_user     = MQTT_USER;
+String mqtt_password = MQTT_PASSWORD;
+String mqtt_topic    = MQTT_TOPIC;
 
 bool mqtt_connect_change_event = false;
 

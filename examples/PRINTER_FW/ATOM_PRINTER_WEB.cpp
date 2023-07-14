@@ -92,6 +92,7 @@ void handleMQTTConfig() {
     Serial.println("mqtt_topic: " + mqtt_topic_info);
 
     xSemaphoreTake(xMQTTMutex, portMAX_DELAY);
+    mqtt_topic = mqtt_topic_info;
     if (mqttConnect(mqtt_broker, mqtt_port, mqtt_id, mqtt_user, mqtt_password,
                     2000)) {
         webServer.send(200, "text/html",
