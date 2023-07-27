@@ -9,9 +9,8 @@ Contains M5Stack **ATOM PRINTER** firmware;
 
 
 - 1. connect to AP `ATOM_PRINTER-xxxx`
-- 2. Configure WIFI and MQTT in the pop-up window (or visit 192.168.4.1)
-- 3. Configure WiFi connection first. 
-- 4. Configure mqtt server or use the default server(mqtt.m5stack.com)
+- 2. Print data via web page
+- 3. Configure WIFI in the pop-up window (or visit 192.168.4.1) 
 
 ![image](docs/atom_printer_config_01.jpg)
 ![image](docs/atom_printer_config_02.jpg)

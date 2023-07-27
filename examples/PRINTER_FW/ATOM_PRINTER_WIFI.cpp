@@ -3,11 +3,8 @@
 String wifiScan() {
     // 获取当前搜索到的wifi名称列表
     String str;
-    WiFi.mode(WIFI_AP_STA);
     WiFi.disconnect();
-    vTaskDelay(100);
     int n = WiFi.scanNetworks();
-    vTaskDelay(100);
     for (int i = 0; i < n; ++i) {
         str += "<option value=\"";
         str += WiFi.SSID(i);
@@ -21,7 +18,6 @@ String wifiScan() {
 bool wifiConnect(String _wifi_ssid, String _wifi_password,
                  unsigned long timeout) {
     WiFi.disconnect();
-    WiFi.mode(WIFI_AP_STA);
     WiFi.begin(_wifi_ssid.c_str(), _wifi_password.c_str());
     unsigned long start = millis();
     bool is_conneced    = false;
@@ -45,9 +41,10 @@ bool wifiConnect(String _wifi_ssid, String _wifi_password,
     return is_conneced;
 }
 
-void setWifiMode() {
+void wifiInit() {
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+    String mac_addr  = WiFi.softAPmacAddress();
     String No =
         mac_addr.substring(mac_addr.length() - 5, mac_addr.length() - 3) +
         mac_addr.substring(mac_addr.length() - 2, mac_addr.length());

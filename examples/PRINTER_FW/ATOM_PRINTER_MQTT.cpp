@@ -24,7 +24,7 @@ bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
     }
 
     if (mqtt_topic == "") {
-        mqtt_topic = mac_addr;
+        mqtt_topic = device_mac;
     }
 
     if (_mqtt_user == "") {
@@ -71,3 +71,4 @@ bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
 
     return is_conneced;
 }
+

@@ -9,7 +9,7 @@
 extern ATOM_PRINTER printer;
 extern PubSubClient mqttClient;
 extern Preferences preferences;
-extern String mac_addr;
+extern String device_mac;
 
 extern String mqtt_broker;
 extern int mqtt_port;

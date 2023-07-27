@@ -7,7 +7,7 @@
 #include "ATOM_PRINTER_CONFIG.h"
 
 extern String ssid_html;
-extern String mac_addr;
+extern String device_mac;
 extern const IPAddress apIP;
 extern Preferences preferences;
 extern String wifi_ssid;
@@ -16,6 +16,6 @@ extern Atom_Printer_State_t device_state;
 
 String wifiScan();
 bool wifiConnect(String ssid, String password, unsigned long timeout);
-void setWifiMode();
+void wifiInit();
 
 #endif

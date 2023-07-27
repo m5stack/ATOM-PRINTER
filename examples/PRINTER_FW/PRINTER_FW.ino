@@ -41,7 +41,10 @@ const char *apSSID = "ATOM_PRINTER";
 String wifi_ssid;
 String wifi_password;
 String ssid_html;  // wifi列表
-String mac_addr;
+
+bool is_config_mode = true;
+
+String device_mac;
 
 // mqtt
 String mqtt_broker   = MQTT_BROKER;
@@ -76,19 +79,19 @@ void TaskLED(void *pvParameters) {
                 flashing(0x00ff00, 20);  // blinking green
                 break;
             case kWiFiConnected:
-                M5.dis.drawpix(0, 0x1d00ff);  // blue
+                M5.dis.drawpix(0, 0x00ff00);  // green
                 break;
             case kWiFiDisconnected:
                 flashing(0xff0000, 20);  // blinking red
                 break;
             case kMQTTConnected:
-                M5.dis.drawpix(0, 0x1d00ff);  // blue
+                M5.dis.drawpix(0, 0x0000ff);  // blue
                 break;
             case kMQTTDisconnected:
                 flashing(0x0000ff, 20);  // blinking blue
                 break;
         }
-        vTaskDelay(1000);
+        vTaskDelay(500);
     }
 }
 
@@ -104,7 +107,6 @@ void mqttCallback(char *topic, byte *payload, unsigned int len) {
     Serial.println(mqtt_topic + ":");
     Serial.printf("leng:%d\r\n", len);
     Serial.println(String(PayloadData));
-    //  printer.printASCII(String(PayloadData));
     Type = String(PayloadData);
     if (Type.indexOf("TEXT") >= 0) {
         Type   = Type.substring(5);
@@ -116,7 +118,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int len) {
         printer.init();
         printer.printPos(posx);
         printer.fontSize(fonts);
-        printer.printASCII(&Type[indexs + 1]);
+        // printer.printASCII(&Type[indexs + 1]);
         printer.newLine(3);
     } else if (Type.indexOf("QR:") >= 0) {
         printer.init();
@@ -135,27 +137,28 @@ void setup() {
     printer.begin();
     M5.dis.drawpix(0, 0x00ffff);  // 初始化状态灯
     preferences.begin("PRINTER_CONFIG");
-
     // disableCore0WDT();
-
     printer.init();
     // printer.newLine(1);
     // Create LED Task
     xTaskCreatePinnedToCore(TaskLED, "TaskLED"  // A name just for humans
                             ,
-                            4096  // This stack size can be checked & adjusted
+                            2048  // This stack size can be checked & adjusted
                                   // by reading the Stack Highwater
                             ,
                             NULL,
-                            1  // Priority, with 3 (configMAX_PRIORITIES - 1)
+                            3  // Priority, with 3 (configMAX_PRIORITIES - 1)
                                // being the highest, and 0 being the lowest.
                             ,
                             NULL, 0);
 
+    wifiInit();
     ssid_html = wifiScan();
-    mac_addr  = WiFi.softAPmacAddress();
-    setWifiMode();
-    setWebServer();
+    webServerInit();
+    device_mac = WiFi.softAPmacAddress();
+    mqttClient.setBufferSize(4096);
+    mqttClient.setCallback(mqttCallback);
+    mqttClient.setKeepAlive(10);
 
     if (preferences.getString("WIFI_SSID").length() > 1) {
         Serial.println(wifi_ssid);
@@ -164,13 +167,8 @@ void setup() {
         Serial.println(wifi_ssid);
         Serial.println(wifi_password);
         Serial.println("Get WIFI INFO From Preference");
-        wifiConnect(wifi_ssid, wifi_password, 10000);
+        wifiConnect(wifi_ssid, wifi_password, 5000);
     }
-    // } else {
-    //     Serial.println("Use Default AP Config");
-    //     setWifiMode();
-    //     setWebServer();
-    // }
 
     if (preferences.getString("MQTT_BROKER").length() > 1) {
         Serial.println("Get MQTT INFO From Preference");
@@ -184,23 +182,6 @@ void setup() {
     } else {
         Serial.println("Use Default MQTT Config");
     }
-
-    mqttClient.setBufferSize(4096);
-    mqttClient.setCallback(mqttCallback);
-    mqttClient.setKeepAlive(10);
-
-    // printer.init();
-    // printer.printASCII("M5STACK");
-    // delay(2000);
-    // printer.init();
-    // printer.setBarCodeHRI(ABOVE);
-    // printer.printBarCode(CODE128, "M5STACK");
-    // delay(2000);
-    // printer.init();
-    // printer.printQRCode("M5STACK");
-    // delay(2000);
-    // printer.init();
-    // printer.printBMP(0, 184, 180, bitbuffer2);
 }
 
 void loop() {
@@ -208,15 +189,35 @@ void loop() {
     dnsServer.processNextRequest();
     if (WiFi.status() == WL_CONNECTED) {
         if (!mqttClient.connected()) {
-            Serial.println("reconnect mqtt");
-            xSemaphoreTake(xMQTTMutex, portMAX_DELAY);
+            Serial.println("reconnect mqtt...");
+            // xSemaphoreTake(xMQTTMutex, portMAX_DELAY);
             mqttConnect(mqtt_broker, mqtt_port, mqtt_id, mqtt_user,
                         mqtt_password, 2000);
             // mqtt_connect_change_event = false;
-            xSemaphoreGive(xMQTTMutex);
+            // xSemaphoreGive(xMQTTMutex);
         } else {
             mqttClient.loop();
         }
     }
+    if (M5.Btn.pressedFor(5000)) {
+        preferences.clear();
+        Serial.println("reset device...");
+        esp_restart();
+    }
     M5.update();
 }
+
+// print bmp
+
+// printer.init();x
+// printer.printASCII("M5STACK");
+// delay(2000);
+// printer.init();
+// printer.setBarCodeHRI(ABOVE);
+// printer.printBarCode(CODE128, "M5STACK");
+// delay(2000);
+// printer.init();
+// printer.printQRCode("M5STACK");
+// delay(2000);
+// printer.init();
+// printer.printBMP(0, 184, 180, bitbuffer2);

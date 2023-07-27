@@ -13,6 +13,6 @@ void handlerWiFi();
 void handleWiFiConfig();
 void handleMQTTConfig();
 void handlePrint();
-void setWebServer();
+void webServerInit();
 
 #endif

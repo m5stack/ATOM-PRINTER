@@ -23,29 +23,47 @@ extern int bmp_height;
 extern PubSubClient mqttClient;
 extern xSemaphoreHandle xMQTTMutex;
 
-void handleRoot() {
-    webServer.send(200, "text/html", (char*)printer_html);
+// 保存网页获取的数据
+String Pdata, newLine, QRCode, AdjustLevel, printType, BarCode, BarType,
+    Position;
+
+String urlDecode(String input) {
+    String s = input;
+    s.replace("%20", " ");
+    s.replace("+", " ");
+    s.replace("%21", "!");
+    s.replace("%22", "\"");
+    s.replace("%23", "#");
+    s.replace("%24", "$");
+    s.replace("%25", "%");
+    s.replace("%26", "&");
+    s.replace("%27", "\'");
+    s.replace("%28", "(");
+    s.replace("%29", ")");
+    s.replace("%30", "*");
+    s.replace("%31", "+");
+    s.replace("%2C", ",");
+    s.replace("%2E", ".");
+    s.replace("%2F", "/");
+    s.replace("%2C", ",");
+    s.replace("%3A", ":");
+    s.replace("%3A", ";");
+    s.replace("%3C", "<");
+    s.replace("%3D", "=");
+    s.replace("%3E", ">");
+    s.replace("%3F", "?");
+    s.replace("%40", "@");
+    s.replace("%5B", "[");
+    s.replace("%5C", "\\");
+    s.replace("%5D", "]");
+    s.replace("%5E", "^");
+    s.replace("%5F", "-");
+    s.replace("%60", "`");
+    return s;
 }
 
-void handleState() {
-    DynamicJsonDocument payload(1024);
-    payload["WIFI_HTML"] = ssid_html.c_str();
-    if (WiFi.status() == WL_CONNECTED) {
-        payload["WIFI_STATE"] = true;
-        if (mqttClient.connected()) {
-            payload["MQTT_STATE"] =
-                "Server:" + mqtt_broker + "\r\nSubscribe Topic: " + mqtt_topic;
-        } else {
-            payload["MQTT_STATE"] = false;
-        }
-    } else {
-        payload["WIFI_STATE"] = false;
-        payload["MQTT_STATE"] = false;
-    }
-    String res;
-    serializeJson(payload, res);
-    Serial.println(res);
-    webServer.send(200, "text/html", res);
+void handleRoot() {
+    webServer.send(200, "text/html", (char*)printer_html);
 }
 
 void handleWiFiConfig() {
@@ -61,11 +79,33 @@ void handleWiFiConfig() {
     String password = obj[String("password")];
     Serial.println("ssid: " + ssid);
     Serial.println("password: " + password);
-    if (wifiConnect(ssid, password, 10000)) {
+    if (wifiConnect(ssid, password, 6000)) {
         webServer.send(200, "text/html", "OK");
     } else {
         webServer.send(200, "text/html", "ERROR");
     }
+}
+
+void handleStatusConfig() {
+    DynamicJsonDocument payload(1024);
+    payload["WIFI_HTML"] = ssid_html.c_str();
+    if (WiFi.status() == WL_CONNECTED) {
+        payload["WIFI_STATE"] = true;
+        payload["SSID"]       = wifi_ssid;
+        payload["PASSWORD"]   = wifi_password;
+        if (mqttClient.connected()) {
+            payload["MQTT_STATE"] =
+                "Server:" + mqtt_broker + "\r\nSubscribe Topic: " + mqtt_topic;
+        } else {
+            payload["MQTT_STATE"] = false;
+        }
+    } else {
+        payload["WIFI_STATE"] = false;
+        payload["MQTT_STATE"] = false;
+    }
+    String res;
+    serializeJson(payload, res);
+    webServer.send(200, "text/html", res);
 }
 
 void handleMQTTConfig() {
@@ -143,51 +183,49 @@ void handleBMP() {
 }
 
 void handlePrint() {
-    String message;
-    for (uint8_t i = 0; i < webServer.args(); i++) {
-        message += " NAME:" + webServer.argName(i) +
-                   "\n VALUE:" + webServer.arg(i) + "\n";
+    Pdata     = urlDecode(webServer.arg("Pdata"));
+    newLine   = urlDecode(webServer.arg("newLine"));
+    QRCode    = urlDecode(webServer.arg("QRCode"));
+    printType = urlDecode(webServer.arg("printType"));
+    // AdjustLevel = urlDecode(webServer.arg("AdjustLevel"));
+    // BarType     = urlDecode(webServer.arg("BarType"));
+    BarCode = urlDecode(webServer.arg("BarCode"));
+    // Position    = urlDecode(webServer.arg("Position"));
+    if (printType == "ASCII") {
+        printer.init();
+        printer.printASCII(Pdata);
+        Serial.print(Pdata);
+    } else if (printType == "QRCode") {
+        printer.init();
+        printer.printQRCode(QRCode);
+        Serial.print(QRCode);
+    } else if (printType == "BarCode") {
+        printer.init();
+        printer.setBarCodeHRI(HIDE);
+        printer.printBarCode(CODE128, BarCode);
+        Serial.print(BarCode);
     }
-    Serial.println(message);
-    deserializeJson(payload, webServer.arg(0));
-    JsonObject obj = payload.as<JsonObject>();
-    String type    = obj[String("type")];
-    String payload = obj[String("payload")];
-    Serial.println("type: " + type);
-    Serial.println("payload: " + payload);
-    printer.init();
-    if (type == "QRCODE") {
-        printer.init();
-        printer.printQRCode(payload);
-        printer.newLine(3);
-    } else if (type == "BAR") {
-        printer.init();
-        printer.setBarCodeHRI(ABOVE);
-        printer.printBarCode(UPC_A, payload);
-    } else {
-        printer.init();
-        printer.printASCII(payload);
-        printer.newLine(3);
+    if (newLine == "on") {
+        printer.newLine(1);
     }
     webServer.send(200, "text/html", "OK");
 }
 
-void setWebServer() {
+void webServerInit() {
     dnsServer.start(
         DNS_PORT, "*",
         apIP);  // 强制门户认证（需要设置notfound时候的网页，否则不会弹出）
     webServer.onNotFound(handleRoot);
     webServer.on("/", handleRoot);
-    webServer.on("/state", handleState);
-    webServer.on("/print", HTTP_POST, handlePrint);
-    webServer.on("/config", HTTP_POST, handleWiFiConfig);
-    webServer.on("/mqtt", HTTP_POST, handleMQTTConfig);
-    webServer.on("/bmp_size", HTTP_POST, handleBMPSize);
-    //   webServer.on("/bmp", HTTP_POST, handleBMP);
-    webServer.on(
-        "/bmp", HTTP_POST, []() { webServer.send(200, "text/plain", "OK"); },
-        handleBMP);
-
+    webServer.on("/print", HTTP_GET, handlePrint);
+    webServer.on("/wifi_config", HTTP_POST, handleWiFiConfig);
+    webServer.on("/mqtt_config", HTTP_GET, handleMQTTConfig);
+    webServer.on("/device_status", HTTP_GET, handleStatusConfig);
+    // webServer.on(
+    //     "/bmp", HTTP_POST, []() { webServer.send(200, "text/plain", "OK"); },
+    //     handleBMP);
     webServer.begin();
     Serial.println("HTTP server started");
+    Serial.println(
+        WiFi.softAPIP());  // IP address assigned to your ESP  获取ip地址
 }
