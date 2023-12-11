@@ -77,7 +77,7 @@ void ATOM_PRINTER::printBarCode(BarCode_t type, String barcode) {
     enableBarCode(0);
 }
 
-void ATOM_PRINTER::printBMP(uint8_t mode, uint8_t xdot, uint8_t ydot,
+void ATOM_PRINTER::printBMP(uint8_t mode, uint16_t xdot, uint16_t ydot,
                             uint8_t *buffer) {
     uint8_t tmp;
     uint16_t len;
