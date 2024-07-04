@@ -221,9 +221,10 @@ void webServerInit() {
     webServer.on("/wifi_config", HTTP_POST, handleWiFiConfig);
     webServer.on("/mqtt_config", HTTP_GET, handleMQTTConfig);
     webServer.on("/device_status", HTTP_GET, handleStatusConfig);
-    // webServer.on(
-    //     "/bmp", HTTP_POST, []() { webServer.send(200, "text/plain", "OK"); },
-    //     handleBMP);
+    webServer.on("/bmp_size", HTTP_GET, handleBMPSize);
+    webServer.on(
+         "/bmp", HTTP_POST, []() { webServer.send(200, "text/plain", "OK"); },
+         handleBMP);
     webServer.begin();
     Serial.println("HTTP server started");
     Serial.println(
