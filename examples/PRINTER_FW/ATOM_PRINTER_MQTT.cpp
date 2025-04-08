@@ -2,9 +2,9 @@
 
 extern bool mqtt_connect_change_event;
 
-bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
-                 String _mqtt_user, String _mqtt_password,
-                 unsigned long _timeout) {
+bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id, String _mqtt_user, String _mqtt_password,
+                 unsigned long _timeout)
+{
     unsigned long start = millis();
     bool is_conneced    = false;
 
@@ -35,8 +35,7 @@ bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
     }
 
     while (millis() - start < _timeout) {
-        if (mqttClient.connect(mqttid.c_str(), _mqtt_user.c_str(),
-                               _mqtt_password.c_str())) {
+        if (mqttClient.connect(mqttid.c_str(), _mqtt_user.c_str(), _mqtt_password.c_str())) {
             Serial.println("MQTT Connected!");
             is_conneced = true;
             Serial.println(F(" success"));
@@ -71,4 +70,3 @@ bool mqttConnect(String _mqtt_broker, int _mqtt_port, String _mqtt_id,
 
     return is_conneced;
 }
-

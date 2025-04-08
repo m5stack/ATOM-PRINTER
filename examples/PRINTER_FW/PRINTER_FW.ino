@@ -1,12 +1,24 @@
 /*
-  Please install the following dependent libraries before compiling:
-  M5Atom: https://github.com/m5stack/M5Atom
-  FastLED: https://github.com/FastLED/FastLED
+ * SPDX-FileCopyrightText: 2025 M5Stack Technology CO LTD
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
+/**
+ * Please install the following dependent libraries before compiling:
+ * M5Atom: https://github.com/m5stack/M5Atom
+ * FastLED: https://github.com/FastLED/FastLED
+ * PubSubClient: https://github.com/knolleary/pubsubclient
+ * ArduinoJson: https://github.com/bblanchon/ArduinoJson
+ * @Hardwares: Atom Printer
+ * @Platform Version: Arduino M5Stack Board Manager v2.1.4
+ */
+
+/*
   How to use:
   1. connect to AP `ATOM_PRINTER-xxxx`
   2. Visit 192.168.4.1 to print
-  3. Configure WiFi connection and print data through mqtt server
+  3. Configure WiFi connection and print data through mqtt server (refer README)
 */
 
 #include <M5Atom.h>
@@ -37,10 +49,10 @@ int bmp_width                        = 0;
 int bmp_height                       = 0;
 
 // wifi设置
-const char *apSSID = "ATOM_PRINTER";
-String wifi_ssid;
-String wifi_password;
-String ssid_html;  // wifi列表
+const char *apSSID   = "ATOM_PRINTER";
+String wifi_ssid     = "";
+String wifi_password = "";
+String ssid_html;
 
 bool is_config_mode = true;
 
@@ -61,7 +73,8 @@ PubSubClient mqttClient(client);
 
 Atom_Printer_State_t device_state = kInit;
 
-void flashing(uint32_t color, uint8_t frequency) {
+void flashing(uint32_t color, uint8_t frequency)
+{
     static uint32_t prev_ms = millis();
     static bool rgbState    = 0;
     if (millis() > prev_ms + frequency) {
@@ -71,7 +84,8 @@ void flashing(uint32_t color, uint8_t frequency) {
     M5.dis.drawpix(0, color * rgbState);
 }
 
-void TaskLED(void *pvParameters) {
+void TaskLED(void *pvParameters)
+{
     while (1) {
         switch (device_state) {
             case kInit:
@@ -95,7 +109,8 @@ void TaskLED(void *pvParameters) {
     }
 }
 
-void mqttCallback(char *topic, byte *payload, unsigned int len) {
+void mqttCallback(char *topic, byte *payload, unsigned int len)
+{
     // mqtt回调函数：将从订阅主题获得的信息通过串口打印
     char PayloadData[len + 1];
     String Type = "";
@@ -118,7 +133,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int len) {
         printer.init();
         printer.printPos(posx);
         printer.fontSize(fonts);
-        // printer.printASCII(&Type[indexs + 1]);
+        printer.printASCII(&Type[indexs + 1]);
         printer.newLine(3);
     } else if (Type.indexOf("QR:") >= 0) {
         printer.init();
@@ -132,7 +147,8 @@ void mqttCallback(char *topic, byte *payload, unsigned int len) {
     }
 }
 
-void setup() {
+void setup()
+{
     M5.begin(true, false, true);
     printer.begin();
     M5.dis.drawpix(0, 0x00ffff);  // 初始化状态灯
@@ -167,36 +183,27 @@ void setup() {
         Serial.println(wifi_ssid);
         Serial.println(wifi_password);
         Serial.println("Get WIFI INFO From Preference");
-        wifiConnect(wifi_ssid, wifi_password, 5000);
     }
-
-    if (preferences.getString("MQTT_BROKER").length() > 1) {
-        Serial.println("Get MQTT INFO From Preference");
-        mqtt_broker   = preferences.getString("MQTT_BROKER");
-        mqtt_port     = preferences.getInt("MQTT_PORT");
-        mqtt_id       = preferences.getString("MQTT_ID");
-        mqtt_user     = preferences.getString("MQTT_USER");
-        mqtt_password = preferences.getString("MQTT_PASSPWD");
-        mqtt_topic    = preferences.getString("MQTT_TOPIC");
-        Serial.println(mqtt_broker);
-    } else {
-        Serial.println("Use Default MQTT Config");
-    }
+    Serial.println(mqtt_broker);
 }
 
-void loop() {
+void loop()
+{
     webServer.handleClient();
     dnsServer.processNextRequest();
     if (WiFi.status() == WL_CONNECTED) {
         if (!mqttClient.connected()) {
             Serial.println("reconnect mqtt...");
             // xSemaphoreTake(xMQTTMutex, portMAX_DELAY);
-            mqttConnect(mqtt_broker, mqtt_port, mqtt_id, mqtt_user,
-                        mqtt_password, 2000);
+            mqttConnect(mqtt_broker, mqtt_port, mqtt_id, mqtt_user, mqtt_password, 2000);
             // mqtt_connect_change_event = false;
             // xSemaphoreGive(xMQTTMutex);
         } else {
             mqttClient.loop();
+        }
+    } else {
+        if (wifi_ssid != "") {
+            wifiConnect(wifi_ssid, wifi_password, 5000);
         }
     }
     if (M5.Btn.pressedFor(5000)) {

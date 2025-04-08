@@ -1,33 +1,37 @@
-# M5Stack ATOM PRINTER
+# Atom Printer
 
 ## Overview
 
-Contains M5Stack **ATOM PRINTER** firmware;
-
+M5Stack Atom Printer firmware
 
 ## How to use?
 
+- 1.connect to AP `ATOM_PRINTER-xxxx`
+- 2.Print data via web page (visit 192.168.4.1) 
+- 3.Configure Wi-Fi in the web page
 
-- 1. connect to AP `ATOM_PRINTER-xxxx`
-- 2. Print data via web page
-- 3. Configure WIFI in the pop-up window (or visit 192.168.4.1) 
+<img src="./docs/atom_printer_config_01.png" width="60%">
+<img src="./docs/atom_printer_config_02.jpg" width="60%">
 
-![image](docs/atom_printer_config_01.jpg)
-![image](docs/atom_printer_config_02.jpg)
 
-- 5. print data through mqtt server. publish topic is the device mac address.
+- 4.print data through mqtt server. publish topic is the device mac address.
 
 ```shell
 topic: xx:xx:xx:xx:xx:xx
+```
 
-payload:
+- 5.mqtt payload
 
-TEXT,10,0:Hai
+```shell
+TEXT,10,1:Hai
+```
 
+```shell
 BAR:1234
+```
 
+```shell
 QR:1234
-
 ```
 
 ## Related Link

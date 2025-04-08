@@ -1,183 +1,497 @@
 <html>
 
 <head>
-    <meta charset="gbk" name="viewport" content="width=device-width,user-scalable=0">
+    <meta charset="utf-8" name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ATOM Printer</title>
+    <style>
+        :root {
+            --primary-color: #0f73d9;
+            --background-color: #252525;
+            --text-color: white;
+            --input-border: #555;
+            --input-focus: #0f73d9;
+            --error-color: #ff4444;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .option-container {
+            text-align: center;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .option-container.active {
+            background-color: var(--primary-color);
+        }
+
+        .option-title {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .input-line {
+            width: 100%;
+            height: 36px;
+            padding: 8px 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .input-line:focus {
+            outline: none;
+            border-color: var(--input-focus);
+            box-shadow: 0 0 0 2px rgba(15, 115, 217, 0.2);
+        }
+
+        .btn {
+            color: white;
+            width: 70%;
+            border-radius: 30px;
+            border: none;
+            background-color: var(--primary-color);
+            height: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0a5cb0;
+        }
+
+        .btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .wifi-section {
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        .wifi-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-text {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .wifi-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .wifi-option input[type="radio"] {
+            margin: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #manual-ssid-container {
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 14px;
+            margin: 5px 0;
+            min-height: 20px;
+        }
+
+        .password-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .toggle-password:hover {
+            color: var(--text-color);
+        }
+    </style>
 </head>
-<style>
-    body {
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        color: white;
-        background-color: #252525;
-        align-items: center;
-        padding: 20px;
-    }
-
-    .container {
-        text-align: center;
-        width: 100%;
-    }
-
-    .optionContainer {
-        text-align: center;
-        padding: 15px;
-    }
-
-    .optionContainer.active {
-        background-color: #0f73d9;
-    }
-
-    .optionTitle {
-        font-size: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .inputLine {
-        width: 240px;
-        height: 24px;
-    }
-
-    .commitBtn {
-        color: white;
-        width: 70%;
-        border-radius: 30px;
-        border: none;
-        background-color: #0f73d9;
-        height: 35px;
-    }
-</style>
 
 <body>
     <div class="container">
         <h1>ATOM Printer</h1>
-        <p></p><iframe id="id_frame" name="id_frame" style="display:none;"></iframe>
+        <iframe id="id_frame" name="id_frame" style="display:none;"></iframe>
+
+        <!-- Printer Form -->
         <form id="print" method="get" action="/print" target="id_frame">
-            <div class="optionContainer active" id="ascii_option" onclick="optionChange(this)">
-                <div class="optionTitle">
-                    <input class="inputCheck" type="radio" name="printType" value="ASCII" checked>
+            <div class="option-container active" id="ascii_option" onclick="optionChange(this)">
+                <div class="option-title">
+                    <input class="input-check" type="radio" name="printType" value="ASCII" checked>
                     <span>ASCII</span>
                 </div>
-                <input class="inputLine" id="Pdata" length="256" type="text" name="Pdata">
+                <input class="input-line" id="Pdata" maxlength="256" type="text" name="Pdata">
             </div>
-            <div class="optionContainer" id="qrcode_option" onclick="optionChange(this)">
-                <div class="optionTitle">
-                    <input class="inputCheck" type="radio" name="printType" value="QRCode">
+            <div class="option-container" id="qrcode_option" onclick="optionChange(this)">
+                <div class="option-title">
+                    <input class="input-check" type="radio" name="printType" value="QRCode">
                     <span>QRCode</span>
                 </div>
-                <input class="inputLine" id="QRCode" length="256" type="text" name="QRCode">
+                <input class="input-line" id="QRCode" maxlength="256" type="text" name="QRCode">
             </div>
-            <div class="optionContainer" id="barcode_option" onclick="optionChange(this)">
-                <div class="optionTitle">
-                    <input class="inputCheck" type="radio" name="printType" value="BarCode">
+            <div class="option-container" id="barcode_option" onclick="optionChange(this)">
+                <div class="option-title">
+                    <input class="input-check" type="radio" name="printType" value="BarCode">
                     <span>BarCode</span>
                 </div>
-                <input class="inputLine" id="BarCode" maxlength="18" type="text" name="BarCode">
+                <input class="input-line" id="BarCode" maxlength="18" type="text" name="BarCode">
             </div>
-            <p><input class="inputCheck" type="checkbox" name="newLine" value="on" checked>With New Line</p>
-            <p><input class="commitBtn" type="submit" value="Print"></p>
+            <p><input class="input-check" type="checkbox" name="newLine" value="on" checked>With New Line</p>
+            <p><input class="btn" type="submit" value="Print"></p>
         </form>
-        <p id="wifi_status"></p>
-        <p id="mqtt_status"></p>
-        <h1>Wi-Fi Config</h1>
-        <div class="optionContainer" id="wifi_opt" onclick="optionChange(this)">
-            <div class="optionTitle">
-                <span></span>
-                <select class="inputLine" name="ssid" id="wifi_list">
-                    <option value="SCANING">SSID Scaning...</option>
+
+        <!-- Status Display -->
+        <p id="wifi_status" class="status-text">WiFi status: Loading...</p>
+        <p id="mqtt_status" class="status-text">MQTT status: Loading...</p>
+
+        <!-- WiFi Configuration Section -->
+        <div class="wifi-section">
+            <h1>Wi-Fi Configuration</h1>
+
+            <div class="wifi-selector">
+                <div class="wifi-option">
+                    <input type="radio" id="wifi-select" name="wifi-option" value="select" checked
+                        onclick="toggleWifiInputType('select')">
+                    <label for="wifi-select">Select from available networks</label>
+                </div>
+
+                <div class="wifi-option">
+                    <input type="radio" id="wifi-manual" name="wifi-option" value="manual"
+                        onclick="toggleWifiInputType('manual')">
+                    <label for="wifi-manual">Enter network manually</label>
+                </div>
+            </div>
+
+            <!-- Network Selection Dropdown -->
+            <div id="wifi-select-container">
+                <select class="input-line" name="ssid" id="wifi-list">
+                    <option value="">Loading available networks...</option>
                 </select>
             </div>
-            <input id="pass" class="inputLine" name="pass" length=64 type="password">
+
+            <!-- Manual Network Input -->
+            <div id="manual-ssid-container" class="hidden">
+                <input class="input-line" id="manual-ssid" type="text" placeholder="Enter network name (SSID)">
+            </div>
+
+            <!-- Password Field with Toggle -->
+            <div class="password-container">
+                <input id="wifi-pass" class="input-line" name="pass" maxlength="64" type="password"
+                    placeholder="Wi-Fi password">
+                <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">Show</button>
+            </div>
+
+            <!-- Error message display -->
+            <div id="wifi-error" class="error-message"></div>
+
+            <button id="wifi-btn" class="btn" onclick="commitWifi()">
+                Connect to WiFi
+            </button>
         </div>
-        <br>
-        <button id="wifiBtn" class="commitBtn" onclick="commitWifi()">
-            Connect
-        </button>
     </div>
-    </div>
-</body>
 
-<script>
-    function optionChange(e) {
-        try {
-            var option = document.querySelectorAll('.optionContainer');
-            option.forEach(item => {
-                item.classList.remove('active');
-            });
-            e.classList.add('active');
-            e.querySelector(".inputCheck").checked = true;
-        } catch (error) {
+    <script>
+        // Global variables
+        let httpRequest;
+        let isWifiConnected = false;
+        let connectionAttempts = 0;
+        const MAX_CONNECTION_ATTEMPTS = 3;
 
-        }
-    }
-
-
-    function statusHandle() {
-        var wifi_status = document.querySelector("#wifi_status");
-        var mqtt_status = document.querySelector("#mqtt_status");
-        var data = httpRequest.responseText;
-        console.log(data);
-        var obj = JSON.parse(data);
-        if (obj) {
-            document.getElementById("wifi_list").innerHTML = obj["WIFI_HTML"];
-            if (obj["WIFI_STATE"]) {
-                wifi_status.innerText = obj["SSID"] + ": connected";
-                document.getElementById("wifiBtn").innerText = "connected";
-            } else {
-                wifi_status.innerText = "WiFi Not Connect!";
-                document.getElementById("wifiBtn").innerText = "Connect";
-            }
-            if (obj["MQTT_STATE"]) {
-                mqtt_status.innerText = obj["MQTT_STATE"];
-            } else {
-                mqtt_status.innerText = "MQTT Not Connect!";
-            }
-        }
-    }
-
-    function getStatus() {
-        if (window.XMLHttpRequest) {
-            httpRequest = new XMLHttpRequest()
-        } else if (window.ActiveXObject) {
-            httpRequest = new ActiveXObject()
-        }
-        httpRequest.open("GET", "/device_status", true);
-        httpRequest.onreadystatechange = statusHandle;
-        httpRequest.send();
-    }
-    getStatus();
-
-    function wifi_config_handle() {
-        var data = httpRequest.responseText;
-        console.log(data);
-        if (data == "OK") {
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
             getStatus();
-        }
-    }
+            setInterval(getStatus, 5000); // Refresh status every 5 seconds
 
-    function commitWifi() {
-        var ssid = document.getElementById('wifi_list').value;
-        var pwd = document.getElementById('pass').value;
-        console.log(ssid);
-        console.log(pwd);
-        if (window.XMLHttpRequest) {
-            httpRequest = new XMLHttpRequest()
-        } else if (window.ActiveXObject) {
-            httpRequest = new ActiveXObject()
-        }
-        var data_json = JSON.stringify({
-            "ssid": ssid,
-            "password": pwd
-        })
-        document.getElementById("wifiBtn").innerText = "connecting....";
-        httpRequest.open("POST", "/wifi_config", true);
-        httpRequest.onreadystatechange = wifi_config_handle;
-        httpRequest.send(data_json);
-    }
+            // 添加WiFi列表选择变化监听
+            document.getElementById('wifi-list').addEventListener('change', function () {
+                resetWifiConnectionState();
+            });
 
-</script>
+            // 添加手动SSID输入变化监听
+            document.getElementById('manual-ssid').addEventListener('input', function () {
+                resetWifiConnectionState();
+            });
+        });
+
+        // 重置WiFi连接状态
+        function resetWifiConnectionState() {
+            const wifiBtn = document.getElementById('wifi-btn');
+            wifiBtn.disabled = false;
+            wifiBtn.textContent = 'Connect to WiFi';
+            connectionAttempts = 0;
+            document.getElementById('wifi-error').textContent = '';
+        }
+
+        // Toggle password visibility
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById('wifi-pass');
+            const toggleButton = document.querySelector('.toggle-password');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleButton.textContent = 'Hide';
+            } else {
+                passwordField.type = 'password';
+                toggleButton.textContent = 'Show';
+            }
+        }
+
+        // Toggle between WiFi selection methods
+        function toggleWifiInputType(type) {
+            const selectContainer = document.getElementById('wifi-select-container');
+            const manualContainer = document.getElementById('manual-ssid-container');
+
+            if (type === 'select') {
+                selectContainer.classList.remove('hidden');
+                manualContainer.classList.add('hidden');
+            } else {
+                selectContainer.classList.add('hidden');
+                manualContainer.classList.remove('hidden');
+            }
+
+            // 切换输入方式时也重置连接状态
+            resetWifiConnectionState();
+        }
+
+        // Change active option for printer types
+        function optionChange(element) {
+            try {
+                const options = document.querySelectorAll('.option-container');
+                options.forEach(item => {
+                    item.classList.remove('active');
+                });
+                element.classList.add('active');
+                element.querySelector(".input-check").checked = true;
+            } catch (error) {
+                console.error('Error in optionChange:', error);
+            }
+        }
+
+        // Handle device status response
+        function statusHandle() {
+            if (httpRequest.readyState !== XMLHttpRequest.DONE) return;
+
+            if (httpRequest.status === 200) {
+                try {
+                    const data = httpRequest.responseText;
+                    const obj = JSON.parse(data);
+
+                    updateWifiStatus(obj);
+                    updateMqttStatus(obj);
+                    updateWifiList(obj);
+
+                } catch (error) {
+                    console.error('Error parsing status response:', error);
+                    document.getElementById('wifi_status').textContent = 'Error loading status';
+                }
+            } else {
+                console.error('Status request failed:', httpRequest.status);
+            }
+        }
+
+        // Update WiFi status display
+        function updateWifiStatus(data) {
+            const wifiStatus = document.getElementById('wifi_status');
+            const wifiBtn = document.getElementById('wifi-btn');
+            const errorDisplay = document.getElementById('wifi-error');
+
+            if (data.WIFI_STATE) {
+                wifiStatus.textContent = `Connected to: ${data.SSID}`;
+                wifiBtn.textContent = 'Connected!';
+                wifiBtn.disabled = false;
+                isWifiConnected = true;
+                errorDisplay.textContent = '';
+            } else {
+                wifiStatus.textContent = 'WiFi Not Connected';
+                wifiBtn.textContent = 'Connect to WiFi';
+                wifiBtn.disabled = false;
+                isWifiConnected = false;
+
+                if (connectionAttempts > 0) {
+                    errorDisplay.textContent = 'Connection failed. Please check your network and password.';
+                }
+            }
+        }
+
+        // Update MQTT status display
+        function updateMqttStatus(data) {
+            const mqttStatus = document.getElementById('mqtt_status');
+
+            if (data.MQTT_STATE) {
+                let statusText = `MQTT: Connected`;
+                if (data.MQTT_BROKER) {
+                    statusText += ` | Broker: ${data.MQTT_BROKER}`;
+                }
+                if (data.MQTT_TOPIC) {
+                    statusText += ` | Topic: ${data.MQTT_TOPIC}`;
+                }
+                mqttStatus.textContent = statusText;
+            } else {
+                mqttStatus.textContent = 'MQTT Not Connected';
+            }
+        }
+
+        let currentSelectedWifi = null;
+
+        function updateWifiList(data) {
+            if (data.WIFI_HTML) {
+                const list = document.getElementById('wifi-list');
+                currentSelectedWifi = list.value;
+
+                list.innerHTML = data.WIFI_HTML;
+
+                if (currentSelectedWifi && [...list.options].some(o => o.value === currentSelectedWifi)) {
+                    list.value = currentSelectedWifi;
+                }
+            }
+        }
+
+        // Get current device status
+        function getStatus() {
+            if (isWifiConnected) return; // Don't refresh if already connected
+
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open("GET", "/device_status", true);
+            httpRequest.onreadystatechange = statusHandle;
+            httpRequest.onerror = function () {
+                console.error('Error fetching device status');
+            };
+            httpRequest.send();
+        }
+
+        // Handle WiFi config response
+        function wifiConfigHandle() {
+            if (httpRequest.readyState !== XMLHttpRequest.DONE) return;
+
+            const wifiBtn = document.getElementById('wifi-btn');
+            const errorDisplay = document.getElementById('wifi-error');
+
+            if (httpRequest.status === 200) {
+                const data = httpRequest.responseText;
+                if (data === "OK") {
+                    wifiBtn.textContent = 'Connecting...';
+                    errorDisplay.textContent = '';
+                    connectionAttempts++;
+                    setTimeout(getStatus, 3000); // Check status after 3 seconds
+                } else {
+                    wifiBtn.textContent = 'Connect to WiFi';
+                    errorDisplay.textContent = 'Failed to connect: ' + data;
+                    connectionAttempts++;
+
+                    if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
+                        errorDisplay.textContent += ' (Max attempts reached)';
+                        wifiBtn.disabled = true;
+                        setTimeout(() => {
+                            wifiBtn.disabled = false;
+                            connectionAttempts = 0;
+                        }, 10000); // Re-enable after 10 seconds
+                    }
+                }
+            } else {
+                wifiBtn.textContent = 'Connect to WiFi';
+                errorDisplay.textContent = 'Connection failed. Please try again.';
+                connectionAttempts++;
+                console.error('WiFi config request failed:', httpRequest.status);
+            }
+        }
+
+        // Commit WiFi configuration
+        function commitWifi() {
+            const wifiOption = document.querySelector('input[name="wifi-option"]:checked').value;
+            let ssid;
+
+            if (wifiOption === 'select') {
+                ssid = document.getElementById('wifi-list').value;
+                if (!ssid || ssid === "SCANING") {
+                    document.getElementById('wifi-error').textContent = 'Please select a valid WiFi network';
+                    return;
+                }
+            } else {
+                ssid = document.getElementById('manual-ssid').value.trim();
+                if (!ssid) {
+                    document.getElementById('wifi-error').textContent = 'Please enter a WiFi network name';
+                    return;
+                }
+            }
+
+            const pwd = document.getElementById('wifi-pass').value;
+
+            if (!pwd && !confirm('Are you sure you want to connect to an open network without a password?')) {
+                return;
+            }
+
+            httpRequest = new XMLHttpRequest();
+            const data = JSON.stringify({
+                "ssid": ssid,
+                "password": pwd
+            });
+
+            document.getElementById("wifi-btn").textContent = "Connecting...";
+            document.getElementById("wifi-btn").disabled = true;
+            document.getElementById("wifi-error").textContent = "";
+
+            httpRequest.open("POST", "/wifi_config", true);
+            httpRequest.setRequestHeader("Content-Type", "application/json");
+            httpRequest.onreadystatechange = wifiConfigHandle;
+            httpRequest.onerror = function () {
+                document.getElementById("wifi-btn").textContent = "Connect to WiFi";
+                document.getElementById("wifi-btn").disabled = false;
+                document.getElementById("wifi-error").textContent = 'Network error. Please try again.';
+                connectionAttempts++;
+            };
+            httpRequest.send(data);
+        }
+    </script>
+</body>
 
 </html>

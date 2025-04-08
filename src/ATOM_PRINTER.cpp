@@ -1,25 +1,28 @@
 #include "ATOM_PRINTER.h"
 #include "ATOM_PRINTER_CMD.h"
 
-void ATOM_PRINTER::begin(HardwareSerial *serial, int baud, uint8_t RX,
-                         uint8_t TX, bool debug) {
+void ATOM_PRINTER::begin(HardwareSerial *serial, int baud, uint8_t RX, uint8_t TX, bool debug)
+{
     _debug  = debug;
     _serial = serial;
     _serial->begin(baud, SERIAL_8N1, RX, TX);
 }
 
-void ATOM_PRINTER::init() {
+void ATOM_PRINTER::init()
+{
     _serial->write(INIT_PRINTER_CMD, sizeof(INIT_PRINTER_CMD));
 }
 
-void ATOM_PRINTER::WriteCMD(uint8_t *buff, uint8_t buff_size) {
+void ATOM_PRINTER::WriteCMD(uint8_t *buff, uint8_t buff_size)
+{
     cleanBuffer();
     // memcpy(buffer, PRINT_POS_CMD, sizeof(PRINT_POS_CMD));
     memcpy(buffer, buff, buff_size);
     _serial->write(buffer, buff_size);
 }
 
-void ATOM_PRINTER::printPos(uint16_t posx) {
+void ATOM_PRINTER::printPos(uint16_t posx)
+{
     cleanBuffer();
     memcpy(buffer, PRINT_POS_CMD, sizeof(PRINT_POS_CMD));
     buffer[2] = posx & 0xff;
@@ -27,32 +30,36 @@ void ATOM_PRINTER::printPos(uint16_t posx) {
     _serial->write(buffer, 4);
 }
 
-void ATOM_PRINTER::fontSize(uint8_t font_size) {
+void ATOM_PRINTER::fontSize(uint8_t font_size)
+{
     cleanBuffer();
-    if (font_size > 7)
-        font_size = 7;
+    if (font_size > 7) font_size = 7;
     memcpy(buffer, FONT_SIZE_CMD, sizeof(FONT_SIZE_CMD));
     buffer[2] = (font_size | (font_size << 4)) & 0xff;
     _serial->write(buffer, 3);
 }
 
-void ATOM_PRINTER::cleanBuffer() {
+void ATOM_PRINTER::cleanBuffer()
+{
     for (int i = 0; i < 256; i++) {
         buffer[i] = 0;
     }
 }
 
-void ATOM_PRINTER::newLine(uint8_t count) {
+void ATOM_PRINTER::newLine(uint8_t count)
+{
     for (uint8_t i = 0; i < count; i++) {
         _serial->write(0x0A);
     }
 }
 
-void ATOM_PRINTER::printASCII(String data) {
+void ATOM_PRINTER::printASCII(String data)
+{
     _serial->print(data);
 }
 
-void ATOM_PRINTER::printQRCode(String qrcode) {
+void ATOM_PRINTER::printQRCode(String qrcode)
+{
     // set qrcode
     uint8_t len, nH, nL;
     len = qrcode.length();
@@ -72,23 +79,27 @@ void ATOM_PRINTER::printQRCode(String qrcode) {
     _serial->write(buffer, sizeof(PRINTER_QRCODE_CMD));
 }
 
-void ATOM_PRINTER::setBarCodeHRI(BarCodePos_t pos) {
+void ATOM_PRINTER::setBarCodeHRI(BarCodePos_t pos)
+{
     _serial->write(SET_BAR_CODE_POS_CMD, sizeof(SET_BAR_CODE_POS_CMD));
     _serial->write(pos);
 }
-void ATOM_PRINTER::setQRCodeECL(QRCode_EC_Level_t level) {
+void ATOM_PRINTER::setQRCodeECL(QRCode_EC_Level_t level)
+{
     _serial->write(SET_QRCODE_ECL_CODE_CMD, sizeof(SET_QRCODE_ECL_CODE_CMD));
     _serial->write(level);
 }
 
-void ATOM_PRINTER::enableBarCode(bool state){
+void ATOM_PRINTER::enableBarCode(bool state)
+{
     cleanBuffer();
     memcpy(buffer, ENABLE_BAR_CODE_MODE_CMD, sizeof(ENABLE_BAR_CODE_MODE_CMD));
-    buffer[3]   = state;
+    buffer[3] = state;
     _serial->write(buffer, sizeof(ENABLE_BAR_CODE_MODE_CMD));
 }
 
-void ATOM_PRINTER::printBarCode(BarCode_t type, String barcode) {
+void ATOM_PRINTER::printBarCode(BarCode_t type, String barcode)
+{
     enableBarCode(1);
     cleanBuffer();
     memcpy(buffer, PRINTER_BAR_CODE_CMD, sizeof(PRINTER_BAR_CODE_CMD));
@@ -101,18 +112,17 @@ void ATOM_PRINTER::printBarCode(BarCode_t type, String barcode) {
     enableBarCode(0);
 }
 
-void ATOM_PRINTER::printBMP(uint8_t mode, uint16_t xdot, uint16_t ydot,
-                            uint8_t *buffer) {
-    uint8_t tmp;
+void ATOM_PRINTER::printBMP(uint8_t mode, uint16_t xdot, uint16_t ydot, uint8_t *buffer)
+{
     uint16_t len;
     if (mode > 3) mode = 3;
     memcpy(buffer, PRINTER_BMP_CMD, sizeof(PRINTER_BMP_CMD));
-    xdot = xdot / 8;
-    buffer[3]   = mode;
-    buffer[4]   = (uint8_t)(xdot & 0x00ff);
-    buffer[5]   = (uint8_t)((xdot >> 8) & 0x00ff);;
-    buffer[6]   = (uint8_t)(ydot & 0x00ff);;
-    buffer[7]   = (uint8_t)((ydot >> 8) & 0x00ff);;
+    xdot      = xdot / 8;
+    buffer[3] = mode;
+    buffer[4] = (uint8_t)(xdot & 0x00ff);
+    buffer[5] = (uint8_t)((xdot >> 8) & 0x00ff);
+    buffer[6] = (uint8_t)(ydot & 0x00ff);
+    buffer[7] = (uint8_t)((ydot >> 8) & 0x00ff);
     _serial->write(buffer, sizeof(PRINTER_BMP_CMD));
     len = xdot * ydot;
     while (len) {
